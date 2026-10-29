@@ -79,6 +79,47 @@ def test_scrape_books_detects_pagination_cycle() -> None:
     assert session.execute.call_count == 2
 
 
+def test_scrape_books_respects_exact_book_limit() -> None:
+    listing_with_two_books = (
+        LISTING_HTML
+        + """
+    <article class="product_pod">
+        <h3>
+            <a href="catalogue/another-book_999/index.html">
+                Another book
+            </a>
+        </h3>
+    </article>
+    """
+    )
+
+    client = Mock(spec=ScrapingClient)
+    client.fetch.side_effect = [
+        listing_with_two_books,
+        PRODUCT_HTML,
+    ]
+
+    session = MagicMock()
+    session.__enter__.return_value = session
+    session_factory = Mock(return_value=session)
+
+    result = scrape_books(
+        client=client,
+        session_factory=session_factory,
+        max_books=1,
+        delay_seconds=0,
+    )
+
+    assert result.pages_scraped == 1
+    assert result.books_scraped == 1
+
+    # One listing request and only one product request.
+    assert client.fetch.call_count == 2
+
+    # One database upsert operation.
+    assert session.execute.call_count == 1
+
+
 def test_scrape_books_persists_complete_page() -> None:
     client = Mock(spec=ScrapingClient)
     client.fetch.side_effect = [LISTING_HTML, PRODUCT_HTML]

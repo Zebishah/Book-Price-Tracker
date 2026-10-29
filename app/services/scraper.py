@@ -70,6 +70,7 @@ def scrape_books(
     delay_seconds: float = REQUEST_DELAY_SECONDS,
     max_pages: int = MAX_CATALOGUE_PAGES,
     start_url: str = BASE_URL,
+    max_books: int | None = None,
 ) -> ScrapingResult:
     """Scrape catalogue pages and persist book records."""
 
@@ -78,7 +79,8 @@ def scrape_books(
 
     if max_pages < 1:
         raise ValueError("Maximum pages must be at least one")
-
+    if max_books is not None and max_books < 1:
+        raise ValueError("Maximum books must be at least one")
     # Validate the starting catalogue URL
     parsed_url = urlparse(start_url)
 
@@ -122,7 +124,11 @@ def scrape_books(
 
         books: list[ScrapedBook] = []
 
-        for product_url in product_urls:
+        remaining = (
+            max_books - books_scraped if max_books is not None else len(product_urls)
+        )
+
+        for product_url in product_urls[:remaining]:
             product_html = fetch_page(product_url)
             book = parse_book(product_html, product_url)
             books.append(book)
@@ -133,6 +139,9 @@ def scrape_books(
 
         pages_scraped += 1
         books_scraped += len(books)
+
+        if max_books is not None and books_scraped >= max_books:
+            break
 
         if pages_scraped >= max_pages:
             break
