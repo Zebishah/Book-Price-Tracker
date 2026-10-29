@@ -14,6 +14,7 @@ from app.models.book import Book
 
 @pytest.fixture
 def client():
+    # Create a test API client with an isolated database session.
     engine = create_engine(
         "sqlite+pysqlite://",
         connect_args={"check_same_thread": False},
@@ -54,6 +55,7 @@ def client():
         session.commit()
 
     def override_get_db():
+        # Provide the test database session to API routes.
         with Session(engine) as session:
             yield session
 
@@ -68,6 +70,7 @@ def client():
 
 
 def test_list_books_with_pagination(client: TestClient) -> None:
+    # Check list books with pagination.
     response = client.get("/books?page=1&page_size=2")
 
     assert response.status_code == 200
@@ -81,6 +84,7 @@ def test_list_books_with_pagination(client: TestClient) -> None:
 
 
 def test_get_book_by_id(client: TestClient) -> None:
+    # Check get book by id.
     response = client.get("/books/1")
 
     assert response.status_code == 200
@@ -88,6 +92,7 @@ def test_get_book_by_id(client: TestClient) -> None:
 
 
 def test_filter_by_category(client: TestClient) -> None:
+    # Check filter by category.
     response = client.get("/books?category=programming")
 
     assert response.status_code == 200
@@ -95,6 +100,7 @@ def test_filter_by_category(client: TestClient) -> None:
 
 
 def test_filter_by_price_range(client: TestClient) -> None:
+    # Check filter by price range.
     response = client.get("/books?min_price=20&max_price=50")
 
     assert response.status_code == 200
@@ -102,6 +108,7 @@ def test_filter_by_price_range(client: TestClient) -> None:
 
 
 def test_combined_filters(client: TestClient) -> None:
+    # Check combined filters.
     response = client.get("/books?category=Programming&min_price=40")
 
     assert response.status_code == 200
@@ -110,6 +117,7 @@ def test_combined_filters(client: TestClient) -> None:
 
 
 def test_missing_book_returns_404(client: TestClient) -> None:
+    # Check missing book returns 404.
     response = client.get("/books/999")
 
     assert response.status_code == 404
@@ -129,6 +137,7 @@ def test_invalid_filters_return_422(
     client: TestClient,
     query: str,
 ) -> None:
+    # Check invalid filters return 422.
     response = client.get(f"/books?{query}")
 
     assert response.status_code == 422

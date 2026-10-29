@@ -5,6 +5,7 @@ from app.api.scraping import router as scraping_router
 
 
 def create_app() -> FastAPI:
+    # Create and configure the FastAPI application.
     app = FastAPI(
         title="Book Price Tracker API",
         description="REST API for scraped book data.",
@@ -16,6 +17,7 @@ def create_app() -> FastAPI:
 
     @app.get("/health", tags=["Health"])
     def health_check() -> dict[str, str]:
+        # Return a lightweight response for application health checks.
         return {"status": "ok"}
 
     return app

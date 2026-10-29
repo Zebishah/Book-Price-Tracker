@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def main() -> int:
+    # Parse CLI arguments and run scraping independently of the API.
     parser = argparse.ArgumentParser(
         description="Scrape books and save them to PostgreSQL.",
     )

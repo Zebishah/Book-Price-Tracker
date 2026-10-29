@@ -31,6 +31,7 @@ def get_books(
         Query(ge=0, allow_inf_nan=False),
     ] = None,
 ) -> PaginatedBooksResponse:
+    # Return a paginated list of books with optional filters.
     if min_price is not None and max_price is not None and min_price > max_price:
         raise HTTPException(
             status_code=422,
@@ -60,6 +61,7 @@ def get_book(
     book_id: int,
     session: DbSession,
 ) -> BookResponse:
+    # Fetch one book by ID or return a 404 response.
     if book_id < 1:
         raise HTTPException(
             status_code=404,

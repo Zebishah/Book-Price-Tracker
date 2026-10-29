@@ -7,6 +7,7 @@ from app.models.book import Book
 
 
 def get_book_by_id(session: Session, book_id: int) -> Book | None:
+    # Retrieve a book record by its database ID.
     return session.get(Book, book_id)
 
 
@@ -19,6 +20,7 @@ def list_books(
     min_price: Decimal | None = None,
     max_price: Decimal | None = None,
 ) -> tuple[list[Book], int]:
+    # Apply filters and pagination to the books query.
     filters = []
 
     if category is not None:

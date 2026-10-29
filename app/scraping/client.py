@@ -20,6 +20,7 @@ class ScrapingError(Exception):
 
 class ScrapingClient:
     def __init__(self) -> None:
+        # Initialize the HTTP client and request settings.
         self._client = httpx.Client(
             timeout=httpx.Timeout(
                 connect=5.0,
@@ -34,6 +35,7 @@ class ScrapingClient:
         )
 
     def fetch(self, url: str) -> str:
+        # Download a page with retry and error handling.
         for attempt in range(MAX_RETRIES):
             try:
                 response = self._client.get(url)
@@ -73,10 +75,13 @@ class ScrapingClient:
         raise ScrapingError(f"Failed to fetch {url}")
 
     def close(self) -> None:
+        # Close the underlying HTTP client.
         self._client.close()
 
     def __enter__(self) -> Self:
+        # Return the client when entering a context manager.
         return self
 
     def __exit__(self, *args: object) -> None:
+        # Release HTTP resources when leaving a context manager.
         self.close()

@@ -38,6 +38,7 @@ PRODUCT_HTML = """
 
 
 def test_scrape_books_detects_pagination_cycle() -> None:
+    # Verify scrape books detects pagination cycle.
     listing_html = (
         LISTING_HTML
         + """
@@ -80,6 +81,7 @@ def test_scrape_books_detects_pagination_cycle() -> None:
 
 
 def test_scrape_books_respects_exact_book_limit() -> None:
+    # Verify scrape books respects exact book limit.
     listing_with_two_books = (
         LISTING_HTML
         + """
@@ -121,6 +123,7 @@ def test_scrape_books_respects_exact_book_limit() -> None:
 
 
 def test_scrape_books_persists_complete_page() -> None:
+    # Verify scrape books persists complete page.
     client = Mock(spec=ScrapingClient)
     client.fetch.side_effect = [LISTING_HTML, PRODUCT_HTML]
 
@@ -152,6 +155,7 @@ def test_scrape_books_persists_complete_page() -> None:
 
 
 def test_scrape_books_does_not_persist_incomplete_page() -> None:
+    # Verify scrape books does not persist incomplete page.
     client = Mock(spec=ScrapingClient)
     client.fetch.side_effect = [
         LISTING_HTML,
@@ -171,6 +175,7 @@ def test_scrape_books_does_not_persist_incomplete_page() -> None:
 
 
 def test_scrape_books_rejects_invalid_configuration() -> None:
+    # Verify scrape books rejects invalid configuration.
     client = Mock(spec=ScrapingClient)
 
     with pytest.raises(ValueError):
@@ -181,6 +186,7 @@ def test_scrape_books_rejects_invalid_configuration() -> None:
 
 
 def test_scrape_books_respects_page_limit() -> None:
+    # Verify scrape books respects page limit.
     listing_with_next = (
         LISTING_HTML
         + """

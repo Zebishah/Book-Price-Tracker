@@ -13,6 +13,7 @@ from app.services.scraping_jobs import (
 
 
 def test_job_lifecycle(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Verify job lifecycle.
     manager = ScrapingJobManager()
 
     fake_scrape = Mock(
@@ -42,6 +43,7 @@ def test_job_lifecycle(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_rejects_concurrent_jobs() -> None:
+    # Verify rejects concurrent jobs.
     manager = ScrapingJobManager()
     manager.create_job(limit=10)
 
@@ -50,6 +52,7 @@ def test_rejects_concurrent_jobs() -> None:
 
 
 def test_unknown_job_returns_none() -> None:
+    # Verify unknown job returns none.
     manager = ScrapingJobManager()
 
     assert manager.get_job(uuid4()) is None

@@ -19,6 +19,7 @@ class ParsingError(ValueError):
 
 
 def _required_text(soup: BeautifulSoup, selector: str) -> str:
+    # Extract required text from an HTML element.
     element = soup.select_one(selector)
 
     if element is None:
@@ -33,6 +34,7 @@ def _required_text(soup: BeautifulSoup, selector: str) -> str:
 
 
 def _absolute_url(base_url: str, href: str) -> str:
+    # Resolve and validate a link against the catalogue URL.
     url = urljoin(base_url, href)
     parsed = urlparse(url)
 
@@ -47,6 +49,7 @@ def _absolute_url(base_url: str, href: str) -> str:
 
 
 def parse_listing(html: str, page_url: str) -> tuple[list[str], str | None]:
+    # Extract book links and pagination from a catalogue page.
     soup = BeautifulSoup(html, "html.parser")
     product_urls: list[str] = []
 
@@ -81,6 +84,7 @@ def parse_listing(html: str, page_url: str) -> tuple[list[str], str | None]:
 
 
 def parse_book(html: str, product_url: str) -> ScrapedBook:
+    # Parse and validate a book's detail page.
     soup = BeautifulSoup(html, "html.parser")
 
     title = _required_text(soup, ".product_main h1")

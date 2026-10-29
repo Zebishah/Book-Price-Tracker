@@ -12,6 +12,7 @@ BASE_URL = "https://books.toscrape.com/"
 
 
 def test_parse_listing_extracts_product_urls_and_next_page() -> None:
+    # Verify parse listing extracts product urls and next page.
     html = """
     <article class="product_pod">
         <h3><a href="a-light-in-the-attic_1000/index.html">Book</a></h3>
@@ -29,6 +30,7 @@ def test_parse_listing_extracts_product_urls_and_next_page() -> None:
 
 
 def test_parse_book_extracts_required_fields() -> None:
+    # Verify parse book extracts required fields.
     html = """
     <ul class="breadcrumb">
         <li>Home</li>
@@ -58,6 +60,7 @@ def test_parse_book_extracts_required_fields() -> None:
 
 
 def test_parse_book_rejects_missing_required_data() -> None:
+    # Verify parse book rejects missing required data.
     with pytest.raises(ParsingError):
         parse_book(
             "<html><body></body></html>",
@@ -66,6 +69,7 @@ def test_parse_book_rejects_missing_required_data() -> None:
 
 
 def test_parse_listing_rejects_external_urls() -> None:
+    # Verify parse listing rejects external urls.
     html = """
     <article class="product_pod">
         <h3><a href="https://example.com/book">Book</a></h3>

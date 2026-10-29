@@ -30,6 +30,7 @@ def start_scraping(
         Query(ge=1, le=1000),
     ] = None,
 ) -> ScrapingJobResponse:
+    # Queue a scraping job unless another job is active.
     try:
         job = scraping_job_manager.create_job(limit)
     except ScrapingAlreadyRunningError as exc:
@@ -51,6 +52,7 @@ def start_scraping(
     response_model=ScrapingJobResponse,
 )
 def get_scraping_job(job_id: UUID) -> ScrapingJobResponse:
+    # Return the current status of a scraping job.
     job = scraping_job_manager.get_job(job_id)
 
     if job is None:

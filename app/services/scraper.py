@@ -31,6 +31,7 @@ class ScrapingResult:
 
 def save_books(session: Session, books: list[ScrapedBook]) -> None:
     """Insert books or update existing records by product URL."""
+    # Upsert scraped books to avoid duplicate product records.
     if not books:
         return
 
@@ -73,6 +74,7 @@ def scrape_books(
     max_books: int | None = None,
 ) -> ScrapingResult:
     """Scrape catalogue pages and persist book records."""
+    # Scrape catalogue pages and persist validated book details.
 
     if delay_seconds < 0:
         raise ValueError("Request delay must not be negative")
@@ -107,6 +109,7 @@ def scrape_books(
     # Keep your existing fetch_page() and while-loop code below.
 
     def fetch_page(url: str) -> str:
+        # Fetch a page after the configured request delay.
         time.sleep(delay_seconds)
         return client.fetch(url)
 

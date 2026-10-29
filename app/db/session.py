@@ -18,5 +18,6 @@ SessionLocal = sessionmaker(
 
 
 def get_db() -> Generator[Session, None, None]:
+    # Provide a database session for each API request.
     with SessionLocal() as session:
         yield session

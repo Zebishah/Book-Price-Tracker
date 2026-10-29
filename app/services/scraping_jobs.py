@@ -19,11 +19,13 @@ class ScrapingAlreadyRunningError(Exception):
 
 class ScrapingJobManager:
     def __init__(self) -> None:
+        # Initialize in-memory job tracking and its lock.
         self._lock = Lock()
         self._jobs: dict[UUID, ScrapingJobResponse] = {}
         self._active_job_id: UUID | None = None
 
     def create_job(self, limit: int | None) -> ScrapingJobResponse:
+        # Register a new scraping job if no job is active.
         with self._lock:
             if self._active_job_id is not None:
                 raise ScrapingAlreadyRunningError("A scraping job is already active")
@@ -40,11 +42,13 @@ class ScrapingJobManager:
             return job.model_copy(deep=True)
 
     def get_job(self, job_id: UUID) -> ScrapingJobResponse | None:
+        # Look up a scraping job by its unique ID.
         with self._lock:
             job = self._jobs.get(job_id)
             return job.model_copy(deep=True) if job else None
 
     def run_job(self, job_id: UUID) -> None:
+        # Execute a scraping job and record its final status.
         with self._lock:
             job = self._jobs[job_id]
             job.status = ScrapingJobStatus.RUNNING

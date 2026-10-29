@@ -8,6 +8,7 @@ from app.services.scraping_jobs import ScrapingJobManager
 
 
 def test_scrape_endpoint_accepts_limited_job(monkeypatch) -> None:
+    # Check scrape endpoint accepts limited job.
     manager = ScrapingJobManager()
     runner = Mock()
 
@@ -37,12 +38,14 @@ def test_scrape_endpoint_accepts_limited_job(monkeypatch) -> None:
 
 
 def test_scrape_endpoint_rejects_invalid_limit() -> None:
+    # Check scrape endpoint rejects invalid limit.
     with TestClient(app) as client:
         assert client.post("/scrape?limit=0").status_code == 422
         assert client.post("/scrape?limit=1001").status_code == 422
 
 
 def test_unknown_scraping_job_returns_404() -> None:
+    # Check unknown scraping job returns 404.
     with TestClient(app) as client:
         response = client.get("/scrape/jobs/00000000-0000-0000-0000-000000000001")
 
