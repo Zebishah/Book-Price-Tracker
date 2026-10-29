@@ -10,10 +10,10 @@ htmlcov/
 dist/
 build/
 
-# Environment and secrets
 .env
 .env.*
 !.env.example
+!.env.docker.example
 
 # IDE
 .vscode/

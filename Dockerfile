@@ -17,8 +17,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 COPY pyproject.toml uv.lock ./
 RUN uv sync --locked --no-dev --no-install-project
 
-# Copy application code and database migrations.
+# Copy application code, standalone scraper, and migrations.
 COPY app/ ./app/
+COPY scripts/ ./scripts/
 COPY alembic/ ./alembic/
 COPY alembic.ini ./
 

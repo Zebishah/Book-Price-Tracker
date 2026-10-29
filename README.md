@@ -1,210 +1,241 @@
-
 # Book Price Tracker API
 
-A REST API built with FastAPI that scrapes book information from [Books to Scrape](https://books.toscrape.com/), stores it in PostgreSQL, and exposes endpoints for retrieving and filtering books.
+A FastAPI service that collects book details from [Books to Scrape](https://books.toscrape.com/), stores them in PostgreSQL, and provides endpoints to browse and filter the results.
 
-## Tech Stack
+The scraper collects each book's title, price, star rating, availability, and category. It can be run through the API or directly from the command line. Re-running a scrape updates existing records instead of inserting duplicates.
 
-- **Python 3.12**
-- **FastAPI** — REST API
-- **HTTPX + BeautifulSoup** — Web scraping
-- **SQLAlchemy 2.x** — Database ORM
-- **PostgreSQL** — Data storage
-- **Alembic** — Database migrations
-- **Pydantic** — Request validation and response serialization
-- **Docker Compose** — Containerized application and database
-- **Pytest + Ruff** — Testing, linting, and formatting
-- **uv** — Dependency management
+## Requirements
 
-## Features
+For the Docker setup, you only need:
 
-- Scrape book titles, prices, ratings, availability, and categories.
-- Follow catalogue pagination.
-- Insert new books and update existing records without duplicates.
-- Retrieve books using paginated REST endpoints.
-- Filter by category and price range.
-- Scrape a configurable number of books.
-- Trigger scraping through background tasks and check job status.
-- Apply database migrations automatically in Docker.
+- Git
+- Docker Engine and Docker Compose (`docker compose`)
 
-## Quick Start with Docker
+Python and PostgreSQL do **not** need to be installed on your computer when using Docker.
 
-### Requirements
-
-Docker Engine with Docker Compose support.
+## Run with Docker
 
 ### 1. Clone the repository
 
 ```bash
-git clone YOUR_REPOSITORY_URL
-cd Book-Price-Tracker
+git clone https://github.com/Zebishah/Book-Price-Tracker.git
 ```
 
-### 2. Start the application
+If the repository is private, you will need GitHub access before cloning it.
+
+### 2. Configure the database
+
+Create a local Docker environment file from the provided example:
+
+```bash
+cp .env.docker.example .env.docker
+```
+
+Open `.env.docker` and set a password for the local PostgreSQL user. The same password must appear in `POSTGRES_PASSWORD` and in the `DATABASE_URL` connection string. For example:
+
+```dotenv
+POSTGRES_USER=booktracker
+POSTGRES_PASSWORD=choose_a_local_password
+POSTGRES_DB=booktracker
+DATABASE_URL=postgresql+psycopg://booktracker:choose_a_local_password@db:5432/booktracker
+```
+
+Use a password without URL-special characters for this local example, or URL-encode the password in `DATABASE_URL`. Keep the hostname **`db`**, not `localhost`: the API connects to PostgreSQL over Docker's internal network.
+
+The `.env.docker` file is ignored by Git and should not be committed.
+
+### 3. Start the application
 
 ```bash
 docker compose up --build -d
 ```
 
-Docker Compose starts PostgreSQL and FastAPI. Alembic migrations run automatically before the API starts.
+This starts PostgreSQL and the API. The API applies the Alembic database migrations automatically before starting. The database starts empty on the first run.
 
-### 3. Open the API documentation
+Check that the containers are healthy:
 
-Swagger UI:
+```bash
+docker compose ps
+```
 
-http://localhost:8000/docs
+You should see the `db` and `api` services running. The API may briefly show `health: starting` while it initializes.
 
-Health check:
+Check the API:
 
-http://localhost:8000/health
+```bash
+curl http://localhost:8000/health
+```
+
+Expected response:
+
+```json
+{"status":"ok"}
+```
+
+Interactive API documentation is available at **http://localhost:8000/docs**.
 
 ### 4. Scrape books
 
-To scrape the first 20 books:
+Start with a small scrape:
 
 ```bash
-curl -X POST "http://localhost:8000/scrape?limit=20"
+curl -X POST "http://localhost:8000/scrape?limit=5"
 ```
 
-The endpoint returns HTTP 202 with a job ID.
+The API responds with HTTP `202 Accepted` and a JSON object containing a `job_id`. Scraping continues in the background.
 
-Check the job status:
+Check its progress using the returned ID:
 
 ```bash
-curl "http://localhost:8000/scrape/jobs/JOB_ID"
+curl "http://localhost:8000/scrape/jobs/YOUR_JOB_ID"
 ```
 
-Replace `JOB_ID` with the returned UUID.
+Replace `YOUR_JOB_ID` with the UUID from the previous response. When the job finishes, `status` becomes `completed` and the response includes `pages_scraped` and `books_scraped`.
 
-To scrape the entire catalogue:
+To scrape the whole catalogue, omit the limit:
 
 ```bash
 curl -X POST "http://localhost:8000/scrape"
 ```
 
-A full scrape may take several minutes.
+A full scrape takes longer because the scraper requests individual book pages. Only one scraping job can run at a time in the configured API process.
 
-### 5. Retrieve books
+### 5. View the saved books
 
 ```bash
-# List books
+# First page of books
 curl "http://localhost:8000/books"
 
-# Pagination
-curl "http://localhost:8000/books?page=2&page_size=10"
+# Five books per page
+curl "http://localhost:8000/books?page=1&page_size=5"
 
-# Retrieve one book
+# A specific book
 curl "http://localhost:8000/books/1"
 
-# Category filter
+# Filter by category
 curl "http://localhost:8000/books?category=Poetry"
 
-# Price range
+# Filter by price range
 curl "http://localhost:8000/books?min_price=20&max_price=40"
 
-# Combined filters
-curl "http://localhost:8000/books?category=Fiction&min_price=10&max_price=40"
+# Combine filters
+curl "http://localhost:8000/books?category=Fiction&min_price=20&max_price=40"
 ```
 
-## API Endpoints
+Prices are stored in GBP. Book IDs are generated by PostgreSQL, so they are not necessarily tied to the order shown on the website.
+
+## API endpoints
 
 | Method | Endpoint | Description |
-|---|---|---|
-| GET | `/health` | Application health |
-| GET | `/books` | Paginated books with optional filters |
-| GET | `/books/{book_id}` | Retrieve a specific book |
-| POST | `/scrape` | Start a scraping job |
-| GET | `/scrape/jobs/{job_id}` | Retrieve scraping job status |
+| --- | --- | --- |
+| `GET` | `/health` | Check the API health |
+| `GET` | `/books` | List books with pagination and optional filters |
+| `GET` | `/books/{book_id}` | Get a single book by ID |
+| `POST` | `/scrape` | Start a scraping job |
+| `GET` | `/scrape/jobs/{job_id}` | Check a scraping job |
 
-### Scraping Parameters
+`GET /books` accepts the following optional query parameters:
 
-`POST /scrape` accepts an optional `limit` query parameter between 1 and 1000.
+| Parameter | Description |
+| --- | --- |
+| `page` | Page number (default: `1`, minimum: `1`) |
+| `page_size` | Records per page (default: `20`, range: `1`–`100`) |
+| `category` | Case-insensitive category match |
+| `min_price` | Minimum price, inclusive |
+| `max_price` | Maximum price, inclusive |
 
-If omitted, the scraper processes the available catalogue.
+`POST /scrape` accepts an optional `limit` from `1` to `1000`. If omitted, it processes the available catalogue.
 
-### Book Pagination Parameters
+Requests with invalid query values return validation errors. Requesting an unknown book ID returns `404`.
 
-- `page`: Page number, starting at 1.
-- `page_size`: Number of records per page, between 1 and 100.
-- `category`: Case-insensitive category filter.
-- `min_price`: Minimum price, inclusive.
-- `max_price`: Maximum price, inclusive.
+## Run the scraper independently
 
-Prices are stored in GBP.
+The scraper can be run without making an API request. To scrape five books using Docker's PostgreSQL database:
 
-## Local Development
+```bash
+docker compose run --rm api python -m scripts.scrape --limit 5
+```
 
-Install [uv](https://docs.astral.sh/uv/) and Python 3.12 or newer.
+To run it without a book limit:
 
-Install dependencies:
+```bash
+docker compose run --rm api python -m scripts.scrape
+```
+
+The command logs its progress and reports the number of pages and books processed. Repeated runs update existing books through PostgreSQL upserts, using the product URL as the unique key.
+
+## Local development (without Docker for the API)
+
+Install Python 3.12 and [uv](https://docs.astral.sh/uv/). You will also need an accessible PostgreSQL database, local or hosted.
 
 ```bash
 uv sync
+cp .env.example .env
 ```
 
-Create a `.env` file based on `.env.example` and configure a PostgreSQL connection.
+Set `DATABASE_URL` in `.env` to your own PostgreSQL connection string. The default example uses `localhost:5432`, which works only if PostgreSQL is actually reachable there. A hosted PostgreSQL connection string can be used instead.
 
-Run migrations:
+Apply migrations:
 
 ```bash
 uv run alembic upgrade head
 ```
 
-Start the development server:
+Run the API:
 
 ```bash
 uv run uvicorn app.main:app --reload
 ```
 
-## Testing
-
-Run all automated tests:
+In another terminal, you can run the scraper independently:
 
 ```bash
-uv run pytest -v
+uv run python -m scripts.scrape --limit 5
 ```
 
-Run linting and formatting checks:
+The local Python commands use `.env` (or an exported `DATABASE_URL`); Docker uses `.env.docker`. These can point to different databases.
+
+## Tests and linting
+
+With Python 3.12 and uv installed:
 
 ```bash
+uv sync
+uv run pytest -q
 uv run ruff check .
 uv run ruff format --check .
 ```
 
-## Database
+The test suite covers HTML parsing, scraping behavior, job handling, and API endpoints.
 
-SQLAlchemy defines the `books` table and Alembic manages schema migrations.
+## Database and implementation notes
 
-The `product_url` column has a unique constraint. Repeated scraping uses PostgreSQL upserts to update existing records rather than create duplicates.
+The `books` table stores the title, price, rating, availability, category, original product URL, and scraping timestamp. SQLAlchemy handles persistence and Alembic manages schema changes.
 
-The `scraped_at` timestamp records when a book was most recently saved.
+The scraper uses HTTPX and BeautifulSoup, with request timeouts, retries, and validation for missing or invalid fields. It follows catalogue pagination and writes scraped records to PostgreSQL in transactions. A unique constraint on `product_url` prevents duplicate books.
 
-Docker Compose uses its own PostgreSQL instance with persistent volume storage. It does not require a Neon database or access to the developer's personal database credentials.
+API-triggered scraping uses FastAPI background tasks. Job state is held in memory, so job history is cleared if the API restarts; the Docker configuration runs a single API worker for that reason. This setup is intended for local evaluation and does not expose the API publicly by default.
 
-## Design Notes
+## Stop or reset the project
 
-- HTTP fetching, HTML parsing, database access, and API handlers are separated into focused modules.
-- Scraping processes book detail pages sequentially.
-- Database writes use page-level transactions.
-- HTTP requests have configured timeouts and retries.
-- Scraping jobs are tracked in memory and only one can run at a time per application process.
-- Background jobs are not persisted across process restarts.
-- The Docker setup runs one API worker because job state is in memory.
-
-## Security and Deployment
-
-The Docker Compose configuration is intended for local development and assignment evaluation.
-
-The API is bound to localhost by default. Scraping endpoints have no authentication and should not be exposed publicly without access controls.
-
-Production deployment would require persistent background job storage, appropriate authentication, managed credentials, and operational monitoring.
-
-## Stopping the Application
+Stop and remove the application containers while preserving the database:
 
 ```bash
 docker compose down
 ```
 
-This preserves the PostgreSQL data volume.
+Start again with:
 
-Running `docker compose down -v` also removes the database volume and its stored data.
+```bash
+docker compose up -d
+```
+
+Books remain in Docker's PostgreSQL volume across normal restarts.
+
+To **delete all local Docker database data** and start with an empty database, explicitly remove the volume:
+
+```bash
+docker compose down -v
+```
+
+Only use the last command if you intend to discard the stored books.
