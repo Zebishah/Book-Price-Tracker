@@ -15,6 +15,15 @@ def create_app() -> FastAPI:
     app.include_router(books_router)
     app.include_router(scraping_router)
 
+    @app.get("/", tags=["General"])
+    def root() -> dict[str, str]:
+        # Provide API information and links to the documentation and health check.
+        return {
+            "message": "Book Price Tracker API",
+            "documentation": "/docs",
+            "health": "/health",
+        }
+
     @app.get("/health", tags=["Health"])
     def health_check() -> dict[str, str]:
         # Return a lightweight response for application health checks.
