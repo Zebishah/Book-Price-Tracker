@@ -19,6 +19,7 @@ Python and PostgreSQL do **not** need to be installed on your computer when usin
 
 ```bash
 git clone https://github.com/Zebishah/Book-Price-Tracker.git
+cd Book-Price-Tracker
 ```
 
 If the repository is private, you will need GitHub access before cloning it.
