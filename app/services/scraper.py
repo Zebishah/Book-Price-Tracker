@@ -106,8 +106,6 @@ def scrape_books(
     pages_scraped = 0
     books_scraped = 0
 
-    # Keep your existing fetch_page() and while-loop code below.
-
     def fetch_page(url: str) -> str:
         # Fetch a page after the configured request delay.
         time.sleep(delay_seconds)
